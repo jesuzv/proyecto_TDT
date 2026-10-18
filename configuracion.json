@@ -1,0 +1,21 @@
+{
+  "titulos": [
+    "4. Complejo de vivienda social. Ushuaia, Tierra del Fuego",
+    "7. Itaembé Guazú. Posadas, Misiones",
+    "10. Complejo de vivienda social. Malargue, Mendoza"
+  ],
+  "versiones": {
+    "before": {
+      "date": "2014-02-20",
+      "url": "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/10/{z}/{y}/{x}",
+      "item_id": "903f0abe9c3b452dafe1ca5b8dd858b9",
+      "metadata_url": "https://metadata.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Metadata_2014_r01/MapServer"
+    },
+    "after": {
+      "date": "2026-09-24",
+      "url": "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/63116/{z}/{y}/{x}",
+      "item_id": "ab83ada1bd3145978eecfb115aaa10c3",
+      "metadata_url": "https://metadata.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Metadata_2026_r09/MapServer"
+    }
+  }
+}
