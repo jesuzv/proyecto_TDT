@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="referrer" content="origin"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tres barrios · Un recorrido</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:system-ui,sans-serif;color:#172c32;background:#f6f4ee}body{display:flex;flex-direction:column}
+header{padding:18px 24px;background:#132e35;color:white;display:flex;justify-content:space-between;align-items:center;gap:12px}header h1{font-size:21px;margin:3px 0}header small{color:#a9d9c7;text-transform:uppercase;letter-spacing:2px;font-size:10px}header span{font-size:12px;color:#c3d5d9}
+#map-wrap{flex:1;min-height:260px;position:relative;overflow:hidden}#map{height:100%;width:100%}#story{padding:20px 24px 16px;touch-action:pan-y;background:#f6f4ee;min-height:170px;border-top:4px solid #19826e}#title{font-size:21px;margin:7px 0 8px}#counter{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#486269}#hint{font-size:12px;color:#486269;margin:0 0 15px}.controls{display:flex;align-items:center;gap:10px}button{cursor:pointer;border:1px solid #c6d3ce;border-radius:7px;background:white;padding:9px 14px;color:#172c32;font:inherit;font-size:13px}button:hover{background:#e0eee6}button:focus-visible{outline:3px solid #16846a;outline-offset:2px}button:disabled{opacity:.35;cursor:default}#dots{display:flex;gap:8px;margin:auto}#dots button{width:30px;height:30px;padding:0;border-radius:50%}#dots button[aria-current="step"]{background:#146d5e;color:white;border-color:#146d5e}#error{display:none;color:#9d2424;padding:10px} @media(max-width:500px){header{padding:13px 16px}header span{display:none}#story{padding:15px 16px}#title{font-size:18px}}
+
+#divider{position:absolute;top:0;bottom:0;width:2px;background:white;left:50%;z-index:800;pointer-events:none;box-shadow:0 0 5px #0008}
+#handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;border:2px solid white;border-radius:50%;background:#132e35;color:white;font-size:23px;padding:0;touch-action:none;cursor:ew-resize;z-index:801}
+.date-label{position:absolute;top:12px;z-index:800;background:#132e35e8;color:white;padding:8px 12px;border-radius:6px;font-size:12px;pointer-events:none}.date-label small{display:block;color:#c4d8dc;font-size:10px}.before-label{left:55px}.after-label{right:12px}
+#source-note{font-size:11px;color:#486269;margin:0 0 12px}#source-note a{color:inherit}
+</style></head><body>
+<header><div><small>Argentina / Tres barrios</small><h1>El territorio, antes y después</h1></div><span>World Imagery Wayback</span></header>
+<div id="map-wrap"><div id="map" aria-label="Comparación de imágenes Wayback"></div>
+<div class="date-label before-label"><small>ANTES · EDICIÓN WAYBACK</small><span id="before-date"></span></div>
+<div class="date-label after-label"><small>DESPUÉS · EDICIÓN WAYBACK</small><span id="after-date"></span></div>
+<div id="divider"></div><button id="handle" role="slider" aria-label="Divisor de imágenes antes y después" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-orientation="horizontal">↔</button></div>
+<section id="story" aria-roledescription="carrusel" aria-label="Barrios">
+<div aria-live="polite" aria-atomic="true"><div id="counter"></div><h2 id="title"></h2></div>
+<p id="hint">Arrastra el divisor para comparar las imágenes. Usa las flechas o desliza este panel para cambiar de barrio.</p>
+<p id="source-note">Fechas de publicación de Wayback, no de captura de las imágenes. <a id="before-source" target="_blank" rel="noopener">Fuente anterior</a> · <a id="after-source" target="_blank" rel="noopener">Fuente reciente</a></p><div class="controls"><button id="prev" aria-label="Barrio anterior">← Anterior</button><div id="dots" aria-label="Seleccionar barrio"></div><button id="next" aria-label="Barrio siguiente">Siguiente →</button></div>
+</section><div id="error" role="alert"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const data = {"type": "FeatureCollection", "features": [{"type": "Feature", "id": 0, "geometry": {"type": "Polygon", "coordinates": [[[-68.38380499724653, -54.83661989960008], [-68.37955968946949, -54.835527941776995], [-68.37690518307629, -54.834450923669856], [-68.37089130540554, -54.834135342953246], [-68.36906844582762, -54.83378461795854], [-68.36751536200765, -54.8332689085458], [-68.3661539373468, -54.8324662367624], [-68.36435372609382, -54.83180845625957], [-68.36379112919768, -54.83227398113006], [-68.36220436843602, -54.83171032978275], [-68.36034720399405, -54.83231648277428], [-68.35950529033336, -54.83173885519263], [-68.35673192514994, -54.83166754240625], [-68.35449094741801, -54.83197418556254], [-68.35344251646337, -54.83110103057592], [-68.3535692992927, -54.82810688548486], [-68.35581968597893, -54.82789235725945], [-68.35881492066447, -54.828385313561775], [-68.35981269741684, -54.829440402929], [-68.36105516537114, -54.82981138448203], [-68.36190207186819, -54.82956016906092], [-68.36354517137121, -54.82971790905079], [-68.36399144542122, -54.82990778061591], [-68.36579682647863, -54.83054749561649], [-68.36783548743892, -54.83098565053539], [-68.36939237562414, -54.83206349116028], [-68.37124846927429, -54.832124831276715], [-68.37158824625074, -54.830915546150706], [-68.37479330492876, -54.83119888430211], [-68.37677111041845, -54.83116967396597], [-68.37855620661844, -54.83149682500521], [-68.3807013646523, -54.83213359406895], [-68.38019423513168, -54.83268564666361], [-68.38172576657136, -54.83342754672044], [-68.38506775005827, -54.83425121533219], [-68.38498153784212, -54.83513328161997], [-68.38380499724653, -54.83661989960008]]]}, "properties": {"FID": 0, "Shape_Leng": 9296.82880506, "Shape_Area": 1901044.49443, "Symbolid": 4, "Name": "4. Complejo de vivienda social. Ushuaia, Tierra del Fuego"}}, {"type": "Feature", "id": 1, "geometry": {"type": "Polygon", "coordinates": [[[-55.977595834246564, -27.409550583961877], [-55.977898447919706, -27.407080539821177], [-55.980999750284084, -27.388950544992976], [-55.98492581926703, -27.390549974945003], [-56.00297916631056, -27.391592683142317], [-56.00418998392245, -27.401723332277985], [-56.00743251222931, -27.401413595992196], [-56.00877349123428, -27.40909538361246], [-56.008151451019174, -27.410378893782422], [-56.00620127141942, -27.409602819777643], [-56.00127170880563, -27.41885659227356], [-55.99331314832636, -27.420542738626043], [-55.977595834246564, -27.409550583961877]]]}, "properties": {"FID": 1, "Shape_Leng": 12555.7385996, "Shape_Area": 9574770.58955, "Symbolid": 7, "Name": "7. Itaembé Guazú. Posadas, Misiones"}}, {"type": "Feature", "id": 2, "geometry": {"type": "Polygon", "coordinates": [[[-69.58230304147277, -35.49473436935463], [-69.58249137506871, -35.49719699311032], [-69.5819834451492, -35.49722022469169], [-69.58203980275518, -35.50190858233704], [-69.58262834569167, -35.504420349861675], [-69.56717184397989, -35.50533638094899], [-69.57597602546703, -35.49485198473698], [-69.58230304147277, -35.49473436935463]]]}, "properties": {"FID": 2, "Shape_Leng": 5551.01771666, "Shape_Area": 1598568.66248, "Symbolid": 10, "Name": "10. Complejo de vivienda social. Malargue, Mendoza"}}]};
+const captions = ["4. Complejo de vivienda social. Ushuaia, Tierra del Fuego", "7. Itaembé Guazú. Posadas, Misiones", "10. Complejo de vivienda social. Malargue, Mendoza"];
+if (typeof L === 'undefined') {
+ document.getElementById('error').style.display='block';
+ document.getElementById('error').textContent='No se pudo cargar Leaflet. Revisa tu conexión a Internet y vuelve a abrir el mapa.';
+} else {
+const map=L.map('map',{scrollWheelZoom:false});
+const releases={"before": {"date": "2014-02-20", "url": "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/10/{z}/{y}/{x}", "item_id": "903f0abe9c3b452dafe1ca5b8dd858b9", "metadata_url": "https://metadata.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Metadata_2014_r01/MapServer"}, "after": {"date": "2026-09-24", "url": "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/63116/{z}/{y}/{x}", "item_id": "ab83ada1bd3145978eecfb115aaa10c3", "metadata_url": "https://metadata.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Metadata_2026_r09/MapServer"}};
+document.getElementById('before-date').textContent=releases.before.date;
+document.getElementById('after-date').textContent=releases.after.date;
+for(const side of ['before','after'])document.getElementById(side+'-source').href='https://www.arcgis.com/home/item.html?id='+releases[side].item_id;
+map.createPane('beforePane').style.zIndex=210;
+const afterPane=map.createPane('afterPane');afterPane.style.zIndex=220;
+const attribution='Imagery © Esri, Vantor, Earthstar Geographics, CNES/Airbus DS, USDA FSA, USGS, Aerogrid, IGN, IGP, and the GIS User Community | <a href="https://livingatlas.arcgis.com/wayback/" target="_blank" rel="noopener">World Imagery Wayback</a>';
+const beforeLayer=L.tileLayer(releases.before.url,{pane:'beforePane',maxZoom:19,maxNativeZoom:19,referrerPolicy:'origin',attribution}).addTo(map);
+const afterLayer=L.tileLayer(releases.after.url,{pane:'afterPane',maxZoom:19,maxNativeZoom:19,referrerPolicy:'origin',attribution}).addTo(map);
+let split=.5;
+const handle=document.getElementById('handle'),divider=document.getElementById('divider'),wrap=document.getElementById('map-wrap');
+function updateSplit(){
+ const size=map.getSize(),tl=map.containerPointToLayerPoint([0,0]),br=map.containerPointToLayerPoint([size.x,size.y]);
+ const x=tl.x+size.x*split;
+ afterPane.style.clip=`rect(${tl.y}px, ${br.x}px, ${br.y}px, ${x}px)`;
+ handle.style.left=divider.style.left=(split*100)+'%';handle.setAttribute('aria-valuenow',Math.round(split*100));
+}
+map.on('move zoom resize viewreset',updateSplit);
+let dragging=false;
+handle.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();dragging=true;handle.setPointerCapture(e.pointerId);});
+handle.addEventListener('pointermove',e=>{if(!dragging)return;const r=wrap.getBoundingClientRect();split=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));updateSplit();});
+handle.addEventListener('pointerup',()=>dragging=false);
+handle.addEventListener('pointercancel',()=>dragging=false);
+handle.addEventListener('keydown',e=>{let v=split;if(e.key==='ArrowLeft')v-=.05;else if(e.key==='ArrowRight')v+=.05;else if(e.key==='Home')v=0;else if(e.key==='End')v=1;else return;e.preventDefault();split=Math.max(0,Math.min(1,v));updateSplit();});
+for(const layer of [beforeLayer,afterLayer])layer.on('tileerror',()=>{const el=document.getElementById('error');el.style.display='block';el.textContent='No se pudo cargar una tesela Wayback. Comprueba tu conexión o consulta la fuente de la imagen.';});
+const layers=data.features.map(f=>L.geoJSON(f,{style:{color:'#ffe581',weight:3,fillOpacity:0}}).addTo(map));
+let current=0;
+const dots=document.getElementById('dots');
+layers.forEach((layer,i)=>{const b=document.createElement('button');b.textContent=i+1;b.setAttribute('aria-label',captions[i]);b.onclick=()=>show(i);dots.appendChild(b);});
+function show(index,animate=true){
+ current=Math.max(0,Math.min(layers.length-1,index));
+ document.getElementById('title').textContent=captions[current];
+ document.getElementById('counter').textContent=`Barrio ${current+1} / ${layers.length}`;
+ document.getElementById('prev').disabled=current===0;
+ document.getElementById('next').disabled=current===layers.length-1;
+ [...dots.children].forEach((b,i)=>{if(i===current)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});
+ layers.forEach((l,i)=>l.setStyle({color:i===current?'#ffe581':'#ffffff',fillOpacity:0,weight:i===current?3:1.5}));
+ split=.5;map.stop();map.invalidateSize({pan:false});
+ const options={padding:[35,35],maxZoom:16,duration:1.3};
+ if(animate&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches)map.flyToBounds(layers[current].getBounds(),options);
+ else map.fitBounds(layers[current].getBounds(),{...options,animate:false});
+}
+document.getElementById('prev').onclick=()=>show(current-1);
+document.getElementById('next').onclick=()=>show(current+1);
+const story=document.getElementById('story');
+let start=null;
+story.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;start={x:e.clientX,y:e.clientY};story.setPointerCapture(e.pointerId);});
+story.addEventListener('pointerup',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)show(current+(dx<0?1:-1));});
+story.addEventListener('pointercancel',()=>start=null);
+story.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefault();show(current+1);}if(e.key==='ArrowLeft'){e.preventDefault();show(current-1);}});
+story.tabIndex=0;
+new ResizeObserver(()=>map.invalidateSize({pan:false})).observe(document.getElementById('map'));
+show(0,false);updateSplit();
+}
+</script></body></html>
